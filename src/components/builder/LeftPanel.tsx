@@ -55,10 +55,13 @@ export function LeftPanel({
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<{ role: "user" | "ai"; text: string }[]>([]);
-  const [image, setImage] = useState<{ dataUrl: string; name: string } | null>(null);
+  const [images, setImages] = useState<{ dataUrl: string; name: string }[]>([]);
   const [analysis, setAnalysis] = useState<any>(null);
   const [issues, setIssues] = useState<Issue[] | null>(null);
+  const [styleKeyword, setStyleKeyword] = useState<string>("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const styles = useQuery({ queryKey: ["style-examples"], queryFn: listStyleExamples });
 
   if (pendingPrompt && pendingPrompt !== prompt) {
     setPrompt(pendingPrompt);
@@ -71,7 +74,11 @@ export function LeftPanel({
         .join(".")
     : undefined;
 
-  async function callAi(text: string, mode?: "accurate" | "improve" | "analyze", imageDataUrl?: string) {
+  async function callAi(
+    text: string,
+    mode?: "accurate" | "improve" | "analyze",
+    imageDataUrls?: string[],
+  ) {
     setBusy(true);
     try {
       const res = await fetch("/api/ai-ui", {
@@ -83,7 +90,8 @@ export function LeftPanel({
           selectionPath,
           device: b.device,
           mode,
-          imageDataUrl,
+          imageDataUrls,
+          styleKeyword: mode === "analyze" ? null : styleKeyword || null,
         }),
       });
       if (!res.ok) {
@@ -93,7 +101,10 @@ export function LeftPanel({
         else toast.error(msg || `AI request failed (${res.status})`);
         return null;
       }
-      const json = (await res.json()) as { result: any };
+      const json = (await res.json()) as { result: any; styleUsed?: string[] };
+      if (json.styleUsed?.length) {
+        setLog((l) => [...l, { role: "ai", text: `Style reference: ${json.styleUsed!.join(", ")}` }]);
+      }
       return json.result;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "AI request failed");
@@ -103,10 +114,11 @@ export function LeftPanel({
     }
   }
 
-  async function run(text: string, mode?: "accurate" | "improve", withImage = false) {
-    if (!text.trim() && !withImage) return;
+  async function run(text: string, mode?: "accurate" | "improve", withImages = false) {
+    if (!text.trim() && !withImages) return;
     setLog((l) => [...l, { role: "user", text: text || "Recreate the uploaded image" }]);
-    const result = await callAi(text, mode, withImage ? image?.dataUrl : undefined);
+    const attach = withImages || images.length ? images.map((i) => i.dataUrl) : undefined;
+    const result = await callAi(text, mode, attach);
     if (!result) return;
     if (result.className) {
       b.setRoot(normalise(result), text.slice(0, 40) || "AI update");
@@ -119,22 +131,28 @@ export function LeftPanel({
     }
   }
 
-  async function onFile(file: File) {
-    const dataUrl = await new Promise<string>((resolve) => {
-      const r = new FileReader();
-      r.onload = () => resolve(String(r.result));
-      r.readAsDataURL(file);
-    });
-    const img = new Image();
-    img.onload = () => {
-      b.addAsset({ id: uid(), name: file.name, dataUrl, width: img.width, height: img.height });
-    };
-    img.src = dataUrl;
-    setImage({ dataUrl, name: file.name });
+  async function onFiles(files: File[]) {
+    const added: { dataUrl: string; name: string }[] = [];
+    for (const file of files) {
+      const dataUrl = await new Promise<string>((resolve) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.readAsDataURL(file);
+      });
+      const img = new Image();
+      img.onload = () => {
+        b.addAsset({ id: uid(), name: file.name, dataUrl, width: img.width, height: img.height });
+      };
+      img.src = dataUrl;
+      added.push({ dataUrl, name: file.name });
+    }
+    if (!added.length) return;
+    setImages((prev) => [...prev, ...added].slice(0, 4));
     setAnalysis(null);
-    const result = await callAi("Analyse this UI screenshot.", "analyze", dataUrl);
+    const result = await callAi("Analyse this UI screenshot.", "analyze", [added[0]!.dataUrl]);
     if (result) setAnalysis(result);
   }
+
 
   const runValidation = () => {
     const spec = DEVICES.find((d) => d.id === b.device) ?? DEVICES[0]!;
