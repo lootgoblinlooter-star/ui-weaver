@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BuilderRouteImport } from './routes/builder'
 import { Route as PluginRouteImport } from './routes/plugin'
+import { Route as StylesRouteImport } from './routes/styles'
 import { Route as ApiAiUiRouteImport } from './routes/api/ai-ui'
 import { Route as ApiPublicSyncRouteImport } from './routes/api/public/sync'
 
@@ -30,6 +31,11 @@ const PluginRoute = PluginRouteImport.update({
   path: '/plugin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StylesRoute = StylesRouteImport.update({
+  id: '/styles',
+  path: '/styles',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAiUiRoute = ApiAiUiRouteImport.update({
   id: '/api/ai-ui',
   path: '/api/ai-ui',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/plugin': typeof PluginRoute
+  '/styles': typeof StylesRoute
   '/api/ai-ui': typeof ApiAiUiRoute
   '/api/public/sync': typeof ApiPublicSyncRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/plugin': typeof PluginRoute
+  '/styles': typeof StylesRoute
   '/api/ai-ui': typeof ApiAiUiRoute
   '/api/public/sync': typeof ApiPublicSyncRoute
 }
@@ -60,19 +68,23 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/builder': typeof BuilderRoute
   '/plugin': typeof PluginRoute
+  '/styles': typeof StylesRoute
   '/api/ai-ui': typeof ApiAiUiRoute
   '/api/public/sync': typeof ApiPublicSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/builder' | '/plugin' | '/api/ai-ui' | '/api/public/sync'
+  fullPaths:
+    '/' | '/builder' | '/plugin' | '/styles' | '/api/ai-ui' | '/api/public/sync'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/builder' | '/plugin' | '/api/ai-ui' | '/api/public/sync'
+  to:
+    '/' | '/builder' | '/plugin' | '/styles' | '/api/ai-ui' | '/api/public/sync'
   id:
     | '__root__'
     | '/'
     | '/builder'
     | '/plugin'
+    | '/styles'
     | '/api/ai-ui'
     | '/api/public/sync'
   fileRoutesById: FileRoutesById
@@ -81,6 +93,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BuilderRoute: typeof BuilderRoute
   PluginRoute: typeof PluginRoute
+  StylesRoute: typeof StylesRoute
   ApiAiUiRoute: typeof ApiAiUiRoute
   ApiPublicSyncRoute: typeof ApiPublicSyncRoute
 }
@@ -108,6 +121,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PluginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/styles': {
+      id: '/styles'
+      path: '/styles'
+      fullPath: '/styles'
+      preLoaderRoute: typeof StylesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ai-ui': {
       id: '/api/ai-ui'
       path: '/api/ai-ui'
@@ -129,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BuilderRoute: BuilderRoute,
   PluginRoute: PluginRoute,
+  StylesRoute: StylesRoute,
   ApiAiUiRoute: ApiAiUiRoute,
   ApiPublicSyncRoute: ApiPublicSyncRoute,
 }
