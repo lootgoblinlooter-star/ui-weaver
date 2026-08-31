@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ImagePlus,
   Loader2,
@@ -9,6 +10,8 @@ import {
   ShieldCheck,
   Boxes,
   Send,
+  Tag,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +21,9 @@ import { useBuilder } from "@/lib/rbx/store";
 import { DEVICES, type RbxNode } from "@/lib/rbx/types";
 import { pathOf, uid, createNode, udim2 } from "@/lib/rbx/tree";
 import { validate, type Issue } from "@/lib/rbx/validate";
+import { listStyleExamples } from "@/lib/style-library";
 import { cn } from "@/lib/utils";
+
 
 const QUICK = [
   "Create a clean simulator UI",
